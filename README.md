@@ -1,4 +1,4 @@
-# Robust Multi-Asset Allocator Research Scaffold
+# Multi-Asset Allocator Research Scaffold
 
 A research codebase for testing hierarchical allocation, covariance shrinkage, estimation error and regime-shift sensitivity in a walk-forward portfolio setting.
 
