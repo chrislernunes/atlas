@@ -32,7 +32,11 @@ The demo saves CSVs, a metrics table and charts under `outputs/`.
 ## What is not implemented yet
 This is a tested baseline scaffold, not the entire proposed institutional research system. The current version does not implement a fitted HMM/change-point model, Bayesian uncertainty integration, private asset cash-flow/NAV models, nonlinear market impact, or multi-trillion-dollar capacity analysis. These are intentionally excluded until the baseline experiment is validated on point-in-time real data.
 
-See [`docs/RESEARCH_NOTE.md`](docs/RESEARCH_NOTE.md) for the research design, limitations and required next steps.
+See [`docs/RESEARCH_NOTE.md`](docs/RESEARCH_NOTE.md) for the original research design, limitations and required next steps.
+
+## Pre-registered synthetic study (2026-10-15)
+
+[`docs/RESEARCH_NOTE_UPGRADED.md`](docs/RESEARCH_NOTE_UPGRADED.md) freezes hypotheses, the controlled data-generating process, nested walk-forward protocol, estimation-error metrics, and failure modes **before** results. Executable modules live under [`study/`](study/). Synthetic data only. A reduced-grid notebook with saved outputs is at [`study/notebooks/pre_registration_demo_executed.ipynb`](study/notebooks/pre_registration_demo_executed.ipynb). Nothing in that notebook is a claim that any method dominates.
 
 For a multi-seed, transaction-cost sensitivity run (takes longer):
 
