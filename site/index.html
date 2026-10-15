@@ -3,6 +3,20 @@
 <head>
 <meta charset="utf-8">
 <title>Atlas protocol</title>
+<meta name="description" content="Protocol, estimands, power calculations, and verification tables for hierarchical multi-asset allocation under estimation error and regime uncertainty.">
+<meta property="og:title" content="Atlas protocol — Hierarchical allocation under estimation error">
+<meta property="og:description" content="Locked synthetic design for walk-forward hierarchical allocation. Primary estimand, bootstrap uncertainty, power, and verification tables.">
+<meta property="og:url" content="https://chrislernunes.github.io/atlas/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Atlas">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Atlas protocol — Hierarchical allocation under estimation error">
+<meta name="twitter:description" content="Protocol, estimands, power, and verification tables for hierarchical multi-asset allocation under estimation error.">
+<meta name="twitter:site" content="@chrislernunes">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 <style>
 body { background:#fff; color:#111; font: 17px/1.55 Georgia, "Iowan Old Style", Palatino, serif; max-width: 860px; margin: 0 auto; padding: 0 1.2rem 3rem; }
 header, footer { display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 0; }
@@ -22,6 +36,15 @@ th:first-child, td:first-child { text-align: left; }
 img { width: 100%; height: auto; }
 .note { border-bottom: 1px solid #111; padding: 0 0 0.8rem; }
 .caption { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; color: #444; margin: -0.6rem 0 1.2rem; }
+.formula {
+  margin: 1.4rem 0;
+  padding: 0.9rem 1.1rem;
+  background: #fafafa;
+  border-left: 3px solid #111;
+  overflow-x: auto;
+  text-align: center;
+}
+.formula .katex-display { margin: 0; }
 </style>
 </head>
 <body>
@@ -43,7 +66,9 @@ img { width: 100%; height: auto; }
 
 <h2>What is being estimated</h2>
 <p>For each locked cell and seed, Δ is the paired difference of mean out-of-sample Frobenius error: sample covariance minus Ledoit–Wolf. The cell summary is the median across seeds. The primary estimand is the N/T-weighted mean of those medians on the stratum N/T ≥ 0.40:</p>
-<pre>Θ_H1 = Σ_{c in stratum} (N/T)_c · median_s(Δ_{c,s}) / Σ_{c in stratum} (N/T)_c</pre>
+<div class="formula">
+$$\Theta_{H1} = \frac{\sum_{c \in \text{stratum}} (N/T)_c \cdot \operatorname{median}_s(\Delta_{c,s})}{\sum_{c \in \text{stratum}} (N/T)_c}$$
+</div>
 <p>The stratum is fixed: N=20, T=36, low, N=20, T=36, moderate, N=20, T=36, block, N=20, T=36, high, N=50, T=36, low, N=50, T=36, moderate, N=50, T=36, block, N=50, T=36, high, N=50, T=60, low, N=50, T=60, moderate, N=50, T=60, block, N=50, T=60, high, N=50, T=120, low, N=50, T=120, moderate, N=50, T=120, block, N=50, T=120, high. Sixteen cells. Seeds 0–29 are the decision sample. Seeds 9000–9004 are the pilot and are not reused.</p>
 <p>Uncertainty for Θ is a seed bootstrap: resample seeds inside each cell, recompute medians, recompute Θ. A block bootstrap of a single path is not the test. Block length 6 is used only for within-path Sharpe intervals.</p>
 <p>The minimum practical effect is a 15% reduction in sample-covariance Frobenius. <code>HOLDS</code> requires the 5th percentile of Θ to be positive and the point estimate to clear that 15% bar. Power of this compound rule is computed at 2× the minimum effect, under a Gaussian homoskedastic model fit to the pilot. The target is 80%. Power exactly at the 15% boundary is reported and is not the gate: at the boundary the point-estimate rule rejects about half the time even when the interval excludes zero. If pilot variance understates the N=50 cells, reported power is an upper bound. If design power is below 80%, a complete sample is still <code>INCONCLUSIVE_UNDERPOWERED</code>.</p>
