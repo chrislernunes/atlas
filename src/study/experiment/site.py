@@ -27,15 +27,42 @@ from study.protocol import (
 )
 
 
-def _table(frame: pd.DataFrame, float_fmt: str = "{:.4f}") -> str:
-    show = frame.copy()
-    for col in show.columns:
-        if pd.api.types.is_float_dtype(show[col]):
-            show[col] = show[col].map(lambda x: "" if pd.isna(x) else float_fmt.format(x))
-    header = "".join(f"<th>{html.escape(str(c))}</th>" for c in show.columns)
+COV_METHODS = ["const_corr_mv", "factor_mv", "hrp", "lw_mv", "sample_mv"]
+X_URL = "https://x.com/chrislernunes"
+LINKEDIN_URL = "https://www.linkedin.com/in/chrisler-nunes-335333161"
+
+_SOCIAL = """
+<nav class="social" aria-label="Profiles">
+  <a href="https://x.com/chrislernunes" aria-label="X">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 10.3 22.1 2h-1.8l-6.4 7.2L8.8 2H2.2l7.8 11L2 22h1.8l6.8-7.7L15.1 22h6.6l-8-11.7Zm-2.4 2.7-.8-1.1L4.6 3.3h2.7l5.1 7 .8 1.1 6.6 9.2h-2.7l-5.4-7.6Z"/></svg>
+  </a>
+  <a href="https://www.linkedin.com/in/chrisler-nunes-335333161" aria-label="LinkedIn">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5A2.5 2.5 0 1 1 2.5 6a2.5 2.5 0 0 1 2.48-2.5ZM3 8.5H6.5V21H3Zm6 0h3.4v1.7h.05c.47-.9 1.62-1.85 3.34-1.85 3.57 0 4.23 2.35 4.23 5.4V21H16.5v-5.55c0-1.32-.02-3.02-1.84-3.02-1.84 0-2.12 1.44-2.12 2.92V21H9Z"/></svg>
+  </a>
+</nav>
+"""
+
+
+def _cell(value, digits=4) -> str:
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return "—"
+    if isinstance(value, (float, int)) and not isinstance(value, bool):
+        number = float(value)
+        if digits == 0:
+            return f"{number:.0f}"
+        return f"{number:.{digits}f}"
+    return str(value)
+
+
+def _table(frame: pd.DataFrame, digits: dict[str, int] | None = None) -> str:
+    digits = digits or {}
+    header = "".join(f"<th>{html.escape(str(c))}</th>" for c in frame.columns)
     body = []
-    for _, row in show.iterrows():
-        body.append("<tr>" + "".join(f"<td>{html.escape(str(v))}</td>" for v in row) + "</tr>")
+    for _, row in frame.iterrows():
+        cells = []
+        for col, value in row.items():
+            cells.append(f"<td>{html.escape(_cell(value, digits.get(col, 4)))}</td>")
+        body.append("<tr>" + "".join(cells) + "</tr>")
     return "<table><thead><tr>" + header + "</tr></thead><tbody>" + "".join(body) + "</tbody></table>"
 
 
@@ -87,34 +114,84 @@ def write_site(verification: Path, dest: Path) -> None:
     _charts(panel, dest)
 
     base = panel[(panel["innovation"] == "gaussian") & (panel["shock"] == "") & (~panel["detector"])]
-    err = base.groupby("method")[["frobenius", "eig_l1", "risk_abs", "eff_bets", "turnover", "failed_frac"]].mean().reset_index()
-    tail = panel[(panel["shock"] == "") & (~panel["detector"]) & (panel["n_assets"] == 20) & (panel["lookback"] == 36) & (panel["corr_type"] == "moderate")]
-    tail = tail.groupby(["innovation", "method"]).frobenius.mean().unstack("method").reset_index()
+    err = (
+        base[base.method.isin(COV_METHODS)]
+        .groupby("method")[["frobenius", "eig_l1", "risk_abs", "eff_bets", "turnover", "failed_frac"]]
+        .mean()
+        .reindex(COV_METHODS)
+        .reset_index()
+    )
+    weights = (
+        base.groupby("method")[["eff_bets", "max_weight", "turnover", "failed_frac"]]
+        .mean()
+        .reindex(["equal_weight", "inverse_vol", *COV_METHODS])
+        .reset_index()
+    )
+    tail_src = panel[(panel["shock"] == "") & (~panel["detector"]) & (panel["n_assets"] == 20) & (panel["lookback"] == 36) & (panel["corr_type"] == "moderate") & (panel["method"].isin(COV_METHODS))]
+    tail = tail_src.groupby(["innovation", "method"]).frobenius.mean().unstack("method").reindex(columns=COV_METHODS).reset_index()
     shock = panel[(panel["n_assets"] == 20) & (panel["lookback"] == 36) & (panel["corr_type"] == "moderate") & (panel["innovation"] == "gaussian") & (panel["method"] == "lw_mv")]
     shock_tbl = shock.groupby(["shock", "detector"]).agg(variance=("var", "mean"), frobenius=("frobenius", "mean")).reset_index()
+    shock_tbl["shock"] = shock_tbl["shock"].replace({"": "none"})
+    shock_tbl["detector"] = shock_tbl["detector"].map({True: "on", False: "off"})
 
     cells = ", ".join(f"N={n}, T={t}, {c}" for n, t, c in STRATUM_CELLS)
-    dec_rows = pd.DataFrame({"item": decision.index.astype(str), "value": decision.astype(str).values})
+    def n(key, spec):
+        return format(float(decision[key]), spec)
+
+    dec_rows = pd.DataFrame(
+        [
+            ["H1", str(decision["h1_status"])],
+            ["Theta, Frobenius", n("theta_h1", ".6f")],
+            ["5th percentile", n("theta_h1_p05", ".6f")],
+            ["95th percentile", n("theta_h1_p95", ".6f")],
+            ["Relative to sample", f"{float(decision['relative_h1']):.1%}"],
+            ["Sample Frobenius", n("mean_sample_frobenius", ".5f")],
+            ["Pilot sigma", n("pilot_sigma", ".6f")],
+            ["Absolute minimum effect", n("mde_abs", ".5f")],
+            ["Power at minimum effect", n("power_at_mde", ".2f")],
+            ["Power at twice the minimum effect", n("power_at_design_alternative", ".2f")],
+            ["H2", str(decision["h2_status"])],
+            ["Theta, effective bets", n("theta_h2", ".2f")],
+            ["H2 5th percentile", n("theta_h2_p05", ".2f")],
+            ["H2 95th percentile", n("theta_h2_p95", ".2f")],
+            ["H3 reversals", str(int(float(decision["h3_reversal_cells"])))],
+            ["Stratum cells", f"{int(float(decision['stratum_cells_present']))} / {int(float(decision['stratum_cells_required']))}"],
+            ["Seeds", f"{int(float(decision['seeds_present']))} / {int(float(decision['seeds_required']))}"],
+        ],
+        columns=["quantity", "value"],
+    )
     page = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Atlas protocol</title>
 <style>
-body {{ background:#fff; color:#111; font: 17px/1.55 Georgia, "Iowan Old Style", Palatino, serif; max-width: 860px; margin: 2.5rem auto; padding: 0 1.2rem 4rem; }}
+body {{ background:#fff; color:#111; font: 17px/1.55 Georgia, "Iowan Old Style", Palatino, serif; max-width: 860px; margin: 0 auto; padding: 0 1.2rem 3rem; }}
+header, footer {{ display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 0; }}
+header {{ border-bottom: 1px solid #111; }}
+footer {{ border-top: 1px solid #ddd; margin-top: 2.5rem; color: #444; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; }}
+.mark {{ font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; }}
+.social {{ display: flex; gap: 0.85rem; }}
+.social a {{ display: flex; color: #111; }}
+.social svg {{ width: 18px; height: 18px; fill: currentColor; }}
 h1,h2,h3 {{ font-weight: 500; letter-spacing: -0.02em; }}
-h1 {{ font-size: 1.7rem; }}
+h1 {{ font-size: 1.7rem; margin-top: 1.6rem; }}
 a {{ color: #111; }}
 code, pre {{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.86rem; }}
-table {{ border-collapse: collapse; width: 100%; margin: 1rem 0 1.5rem; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; }}
-th, td {{ border-bottom: 1px solid #ddd; padding: 5px 7px; text-align: right; }}
+table {{ border-collapse: collapse; width: 100%; margin: 1rem 0 1.5rem; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; font-variant-numeric: tabular-nums; }}
+th, td {{ border-bottom: 1px solid #ddd; padding: 6px 8px; text-align: right; }}
 th:first-child, td:first-child {{ text-align: left; }}
 img {{ width: 100%; height: auto; }}
-.note {{ border-top: 1px solid #111; border-bottom: 1px solid #111; padding: 0.6rem 0; }}
+.note {{ border-bottom: 1px solid #111; padding: 0 0 0.8rem; }}
+.caption {{ font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; color: #444; margin: -0.6rem 0 1.2rem; }}
 </style>
 </head>
 <body>
-<h1>Robust hierarchical allocation: locked synthetic protocol</h1>
+<header>
+  <div class="mark">Atlas</div>
+  {_SOCIAL}
+</header>
+<h1>Hierarchical allocation under estimation error</h1>
 <p class="note">Synthetic data only. The numbers below are the verification sample in this repository. They are not a hypothesis decision. The verification label is <code>{html.escape(str(decision["h1_status"]))}</code>.</p>
 
 <h2>What is being estimated</h2>
@@ -143,16 +220,23 @@ img {{ width: 100%; height: auto; }}
 
 <h2>Verification record</h2>
 <p>Decision seeds required: {len(SEEDS_PRIMARY)}. This run has {decision["seeds_present"]} and {decision["stratum_cells_present"]} of {decision["stratum_cells_required"]} stratum cells. The status function is required to return <code>NOT_A_DECISION_SAMPLE</code>. On the cells that were run, the partial Θ is {float(decision["relative_h1"]):.1%} of sample Frobenius, against a 15% bar, and the seed-bootstrap 5th percentile is {float(decision["theta_h1_p05"]):.6f}. That interval includes non-positive values. Power at the minimum effect is {float(decision["power_at_mde"]):.3f}. Power at twice the minimum effect is {float(decision["power_at_design_alternative"]):.3f} under the pilot variance; that second number is not evidence about N=50.</p>
-{_table(dec_rows, "{:s}")}
-<h3>Mean errors on the Gaussian, unshocked verification paths</h3>
-{_table(err)}
+{_table(dec_rows)}
+<h3>Covariance error, Gaussian paths, no injected shock</h3>
+<p class="caption">Equal weight and inverse volatility do not form a covariance, so they are not in this table.</p>
+{_table(err, {"frobenius": 4, "eig_l1": 4, "risk_abs": 4, "eff_bets": 2, "turnover": 4, "failed_frac": 2})}
 <img src="frobenius.png" alt="Frobenius error against N/T">
 <img src="bets.png" alt="Effective number of bets">
+<h3>Weights, same paths</h3>
+{_table(weights, {"eff_bets": 2, "max_weight": 2, "turnover": 4, "failed_frac": 2})}
 <h3>Tail stress, N=20, T=36, moderate correlation</h3>
-{_table(tail)}
+<p class="caption">Frobenius error. Covariance methods only.</p>
+{_table(tail, {name: 4 for name in COV_METHODS})}
 <h3>Ledoit–Wolf minimum variance under an injected shock</h3>
-{_table(shock_tbl)}
-<p>Source: <a href="https://github.com/chrislernunes/atlas">github.com/chrislernunes/atlas</a>. Constants: <code>src/study/protocol.py</code>.</p>
+{_table(shock_tbl, {"variance": 4, "frobenius": 4})}
+<footer>
+  <div>Constants in <code>src/study/protocol.py</code>. <a href="https://github.com/chrislernunes/atlas">Repository</a>.</div>
+  {_SOCIAL}
+</footer>
 </body>
 </html>
 """

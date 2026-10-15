@@ -4,20 +4,41 @@
 <meta charset="utf-8">
 <title>Atlas protocol</title>
 <style>
-body { background:#fff; color:#111; font: 17px/1.55 Georgia, "Iowan Old Style", Palatino, serif; max-width: 860px; margin: 2.5rem auto; padding: 0 1.2rem 4rem; }
+body { background:#fff; color:#111; font: 17px/1.55 Georgia, "Iowan Old Style", Palatino, serif; max-width: 860px; margin: 0 auto; padding: 0 1.2rem 3rem; }
+header, footer { display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 0; }
+header { border-bottom: 1px solid #111; }
+footer { border-top: 1px solid #ddd; margin-top: 2.5rem; color: #444; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; }
+.mark { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; }
+.social { display: flex; gap: 0.85rem; }
+.social a { display: flex; color: #111; }
+.social svg { width: 18px; height: 18px; fill: currentColor; }
 h1,h2,h3 { font-weight: 500; letter-spacing: -0.02em; }
-h1 { font-size: 1.7rem; }
+h1 { font-size: 1.7rem; margin-top: 1.6rem; }
 a { color: #111; }
 code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.86rem; }
-table { border-collapse: collapse; width: 100%; margin: 1rem 0 1.5rem; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; }
-th, td { border-bottom: 1px solid #ddd; padding: 5px 7px; text-align: right; }
+table { border-collapse: collapse; width: 100%; margin: 1rem 0 1.5rem; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; font-variant-numeric: tabular-nums; }
+th, td { border-bottom: 1px solid #ddd; padding: 6px 8px; text-align: right; }
 th:first-child, td:first-child { text-align: left; }
 img { width: 100%; height: auto; }
-.note { border-top: 1px solid #111; border-bottom: 1px solid #111; padding: 0.6rem 0; }
+.note { border-bottom: 1px solid #111; padding: 0 0 0.8rem; }
+.caption { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; color: #444; margin: -0.6rem 0 1.2rem; }
 </style>
 </head>
 <body>
-<h1>Robust hierarchical allocation: locked synthetic protocol</h1>
+<header>
+  <div class="mark">Atlas</div>
+  
+<nav class="social" aria-label="Profiles">
+  <a href="https://x.com/chrislernunes" aria-label="X">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 10.3 22.1 2h-1.8l-6.4 7.2L8.8 2H2.2l7.8 11L2 22h1.8l6.8-7.7L15.1 22h6.6l-8-11.7Zm-2.4 2.7-.8-1.1L4.6 3.3h2.7l5.1 7 .8 1.1 6.6 9.2h-2.7l-5.4-7.6Z"/></svg>
+  </a>
+  <a href="https://www.linkedin.com/in/chrisler-nunes-335333161" aria-label="LinkedIn">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5A2.5 2.5 0 1 1 2.5 6a2.5 2.5 0 0 1 2.48-2.5ZM3 8.5H6.5V21H3Zm6 0h3.4v1.7h.05c.47-.9 1.62-1.85 3.34-1.85 3.57 0 4.23 2.35 4.23 5.4V21H16.5v-5.55c0-1.32-.02-3.02-1.84-3.02-1.84 0-2.12 1.44-2.12 2.92V21H9Z"/></svg>
+  </a>
+</nav>
+
+</header>
+<h1>Hierarchical allocation under estimation error</h1>
 <p class="note">Synthetic data only. The numbers below are the verification sample in this repository. They are not a hypothesis decision. The verification label is <code>NOT_A_DECISION_SAMPLE</code>.</p>
 
 <h2>What is being estimated</h2>
@@ -46,15 +67,31 @@ img { width: 100%; height: auto; }
 
 <h2>Verification record</h2>
 <p>Decision seeds required: 30. This run has 3 and 4 of 16 stratum cells. The status function is required to return <code>NOT_A_DECISION_SAMPLE</code>. On the cells that were run, the partial Θ is 6.4% of sample Frobenius, against a 15% bar, and the seed-bootstrap 5th percentile is -0.000134. That interval includes non-positive values. Power at the minimum effect is 0.507. Power at twice the minimum effect is 1.000 under the pilot variance; that second number is not evidence about N=50.</p>
-<table><thead><tr><th>item</th><th>value</th></tr></thead><tbody><tr><td>h1_status</td><td>NOT_A_DECISION_SAMPLE</td></tr><tr><td>theta_h1</td><td>0.0005619398608186241</td></tr><tr><td>theta_h1_p05</td><td>-0.00013426978703103972</td></tr><tr><td>theta_h1_p95</td><td>0.0015752981034246993</td></tr><tr><td>mean_sample_frobenius</td><td>0.008713628681810793</td></tr><tr><td>relative_h1</td><td>0.06448976440683567</td></tr><tr><td>pilot_sigma</td><td>0.0009347739463745635</td></tr><tr><td>pilot_mean_sample_frobenius</td><td>0.008399413825489676</td></tr><tr><td>mde_abs</td><td>0.0012599120738234514</td></tr><tr><td>power_at_design_alternative</td><td>1.0</td></tr><tr><td>power_at_mde</td><td>0.507</td></tr><tr><td>h2_status</td><td>NOT_A_DECISION_SAMPLE</td></tr><tr><td>theta_h2</td><td>8.633103647934892</td></tr><tr><td>theta_h2_p05</td><td>8.127348654300615</td></tr><tr><td>theta_h2_p95</td><td>9.308677401685376</td></tr><tr><td>h3_reversal_cells</td><td>0</td></tr><tr><td>stratum_cells_present</td><td>4</td></tr><tr><td>stratum_cells_required</td><td>16</td></tr><tr><td>seeds_present</td><td>3</td></tr><tr><td>seeds_required</td><td>30</td></tr></tbody></table>
-<h3>Mean errors on the Gaussian, unshocked verification paths</h3>
-<table><thead><tr><th>method</th><th>frobenius</th><th>eig_l1</th><th>risk_abs</th><th>eff_bets</th><th>turnover</th><th>failed_frac</th></tr></thead><tbody><tr><td>const_corr_mv</td><td>0.0060</td><td>0.0090</td><td>0.0001</td><td>6.4385</td><td>0.0289</td><td>0.0000</td></tr><tr><td>equal_weight</td><td></td><td></td><td></td><td>14.0000</td><td>0.0111</td><td>0.0000</td></tr><tr><td>factor_mv</td><td>0.0072</td><td>0.0102</td><td>0.0001</td><td>6.6573</td><td>0.0386</td><td>0.0000</td></tr><tr><td>hrp</td><td>0.0052</td><td>0.0068</td><td>0.0001</td><td>10.4625</td><td>0.0631</td><td>0.0000</td></tr><tr><td>inverse_vol</td><td></td><td></td><td></td><td>12.5017</td><td>0.0181</td><td>0.0000</td></tr><tr><td>lw_mv</td><td>0.0052</td><td>0.0068</td><td>0.0001</td><td>7.5708</td><td>0.0364</td><td>0.0000</td></tr><tr><td>sample_mv</td><td>0.0057</td><td>0.0072</td><td>0.0001</td><td>5.7310</td><td>0.0433</td><td>0.0000</td></tr></tbody></table>
+<table><thead><tr><th>quantity</th><th>value</th></tr></thead><tbody><tr><td>H1</td><td>NOT_A_DECISION_SAMPLE</td></tr><tr><td>Theta, Frobenius</td><td>0.000562</td></tr><tr><td>5th percentile</td><td>-0.000134</td></tr><tr><td>95th percentile</td><td>0.001575</td></tr><tr><td>Relative to sample</td><td>6.4%</td></tr><tr><td>Sample Frobenius</td><td>0.00871</td></tr><tr><td>Pilot sigma</td><td>0.000935</td></tr><tr><td>Absolute minimum effect</td><td>0.00126</td></tr><tr><td>Power at minimum effect</td><td>0.51</td></tr><tr><td>Power at twice the minimum effect</td><td>1.00</td></tr><tr><td>H2</td><td>NOT_A_DECISION_SAMPLE</td></tr><tr><td>Theta, effective bets</td><td>8.63</td></tr><tr><td>H2 5th percentile</td><td>8.13</td></tr><tr><td>H2 95th percentile</td><td>9.31</td></tr><tr><td>H3 reversals</td><td>0</td></tr><tr><td>Stratum cells</td><td>4 / 16</td></tr><tr><td>Seeds</td><td>3 / 30</td></tr></tbody></table>
+<h3>Covariance error, Gaussian paths, no injected shock</h3>
+<p class="caption">Equal weight and inverse volatility do not form a covariance, so they are not in this table.</p>
+<table><thead><tr><th>method</th><th>frobenius</th><th>eig_l1</th><th>risk_abs</th><th>eff_bets</th><th>turnover</th><th>failed_frac</th></tr></thead><tbody><tr><td>const_corr_mv</td><td>0.0060</td><td>0.0090</td><td>0.0001</td><td>6.44</td><td>0.0289</td><td>0.00</td></tr><tr><td>factor_mv</td><td>0.0072</td><td>0.0102</td><td>0.0001</td><td>6.66</td><td>0.0386</td><td>0.00</td></tr><tr><td>hrp</td><td>0.0052</td><td>0.0068</td><td>0.0001</td><td>10.46</td><td>0.0631</td><td>0.00</td></tr><tr><td>lw_mv</td><td>0.0052</td><td>0.0068</td><td>0.0001</td><td>7.57</td><td>0.0364</td><td>0.00</td></tr><tr><td>sample_mv</td><td>0.0057</td><td>0.0072</td><td>0.0001</td><td>5.73</td><td>0.0433</td><td>0.00</td></tr></tbody></table>
 <img src="frobenius.png" alt="Frobenius error against N/T">
 <img src="bets.png" alt="Effective number of bets">
+<h3>Weights, same paths</h3>
+<table><thead><tr><th>method</th><th>eff_bets</th><th>max_weight</th><th>turnover</th><th>failed_frac</th></tr></thead><tbody><tr><td>equal_weight</td><td>14.00</td><td>0.09</td><td>0.0111</td><td>0.00</td></tr><tr><td>inverse_vol</td><td>12.50</td><td>0.15</td><td>0.0181</td><td>0.00</td></tr><tr><td>const_corr_mv</td><td>6.44</td><td>0.23</td><td>0.0289</td><td>0.00</td></tr><tr><td>factor_mv</td><td>6.66</td><td>0.23</td><td>0.0386</td><td>0.00</td></tr><tr><td>hrp</td><td>10.46</td><td>0.18</td><td>0.0631</td><td>0.00</td></tr><tr><td>lw_mv</td><td>7.57</td><td>0.21</td><td>0.0364</td><td>0.00</td></tr><tr><td>sample_mv</td><td>5.73</td><td>0.24</td><td>0.0433</td><td>0.00</td></tr></tbody></table>
 <h3>Tail stress, N=20, T=36, moderate correlation</h3>
-<table><thead><tr><th>innovation</th><th>const_corr_mv</th><th>equal_weight</th><th>factor_mv</th><th>hrp</th><th>inverse_vol</th><th>lw_mv</th><th>sample_mv</th></tr></thead><tbody><tr><td>gaussian</td><td>0.0054</td><td></td><td>0.0079</td><td>0.0085</td><td></td><td>0.0085</td><td>0.0089</td></tr><tr><td>mix</td><td>0.0149</td><td></td><td>0.0238</td><td>0.0153</td><td></td><td>0.0153</td><td>0.0249</td></tr><tr><td>t4</td><td>0.0067</td><td></td><td>0.0085</td><td>0.0079</td><td></td><td>0.0079</td><td>0.0091</td></tr></tbody></table>
+<p class="caption">Frobenius error. Covariance methods only.</p>
+<table><thead><tr><th>innovation</th><th>const_corr_mv</th><th>factor_mv</th><th>hrp</th><th>lw_mv</th><th>sample_mv</th></tr></thead><tbody><tr><td>gaussian</td><td>0.0054</td><td>0.0079</td><td>0.0085</td><td>0.0085</td><td>0.0089</td></tr><tr><td>mix</td><td>0.0149</td><td>0.0238</td><td>0.0153</td><td>0.0153</td><td>0.0249</td></tr><tr><td>t4</td><td>0.0067</td><td>0.0085</td><td>0.0079</td><td>0.0079</td><td>0.0091</td></tr></tbody></table>
 <h3>Ledoit–Wolf minimum variance under an injected shock</h3>
-<table><thead><tr><th>shock</th><th>detector</th><th>variance</th><th>frobenius</th></tr></thead><tbody><tr><td></td><td>False</td><td>0.0004</td><td>0.0085</td></tr><tr><td></td><td>True</td><td>0.0004</td><td>0.0089</td></tr><tr><td>corr</td><td>False</td><td>0.0005</td><td>0.0128</td></tr><tr><td>corr</td><td>True</td><td>0.0005</td><td>0.0125</td></tr><tr><td>vol</td><td>False</td><td>0.0009</td><td>0.0315</td></tr><tr><td>vol</td><td>True</td><td>0.0009</td><td>0.0303</td></tr></tbody></table>
-<p>Source: <a href="https://github.com/chrislernunes/atlas">github.com/chrislernunes/atlas</a>. Constants: <code>src/study/protocol.py</code>.</p>
+<table><thead><tr><th>shock</th><th>detector</th><th>variance</th><th>frobenius</th></tr></thead><tbody><tr><td>none</td><td>off</td><td>0.0004</td><td>0.0085</td></tr><tr><td>none</td><td>on</td><td>0.0004</td><td>0.0089</td></tr><tr><td>corr</td><td>off</td><td>0.0005</td><td>0.0128</td></tr><tr><td>corr</td><td>on</td><td>0.0005</td><td>0.0125</td></tr><tr><td>vol</td><td>off</td><td>0.0009</td><td>0.0315</td></tr><tr><td>vol</td><td>on</td><td>0.0009</td><td>0.0303</td></tr></tbody></table>
+<footer>
+  <div>Constants in <code>src/study/protocol.py</code>. <a href="https://github.com/chrislernunes/atlas">Repository</a>.</div>
+  
+<nav class="social" aria-label="Profiles">
+  <a href="https://x.com/chrislernunes" aria-label="X">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 10.3 22.1 2h-1.8l-6.4 7.2L8.8 2H2.2l7.8 11L2 22h1.8l6.8-7.7L15.1 22h6.6l-8-11.7Zm-2.4 2.7-.8-1.1L4.6 3.3h2.7l5.1 7 .8 1.1 6.6 9.2h-2.7l-5.4-7.6Z"/></svg>
+  </a>
+  <a href="https://www.linkedin.com/in/chrisler-nunes-335333161" aria-label="LinkedIn">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5A2.5 2.5 0 1 1 2.5 6a2.5 2.5 0 0 1 2.48-2.5ZM3 8.5H6.5V21H3Zm6 0h3.4v1.7h.05c.47-.9 1.62-1.85 3.34-1.85 3.57 0 4.23 2.35 4.23 5.4V21H16.5v-5.55c0-1.32-.02-3.02-1.84-3.02-1.84 0-2.12 1.44-2.12 2.92V21H9Z"/></svg>
+  </a>
+</nav>
+
+</footer>
 </body>
 </html>
