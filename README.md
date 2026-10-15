@@ -2,8 +2,7 @@
 
 A research codebase for testing hierarchical allocation, covariance shrinkage, estimation error and regime-shift sensitivity in a walk-forward portfolio setting.
 
-**Important:** bundled data and generated charts are synthetic demonstration artifacts, not market data or evidence of investment performance. No ADIA affiliation or institutional deployment is implied.
-
+**Important:** bundled data and generated charts are synthetic demonstration artifacts, not market data or evidence of investment performance.
 ## Quick start (Python 3.10+)
 
 ```bash
