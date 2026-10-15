@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Atlas protocol</title>
+<style>
+body { background:#fff; color:#111; font: 17px/1.55 Georgia, "Iowan Old Style", Palatino, serif; max-width: 860px; margin: 2.5rem auto; padding: 0 1.2rem 4rem; }
+h1,h2,h3 { font-weight: 500; letter-spacing: -0.02em; }
+h1 { font-size: 1.7rem; }
+a { color: #111; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.86rem; }
+table { border-collapse: collapse; width: 100%; margin: 1rem 0 1.5rem; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; }
+th, td { border-bottom: 1px solid #ddd; padding: 5px 7px; text-align: right; }
+th:first-child, td:first-child { text-align: left; }
+img { width: 100%; height: auto; }
+.note { border-top: 1px solid #111; border-bottom: 1px solid #111; padding: 0.6rem 0; }
+</style>
+</head>
+<body>
+<h1>Robust hierarchical allocation: locked synthetic protocol</h1>
+<p class="note">Synthetic data only. The numbers below are the verification sample in this repository. They are not a hypothesis decision. The verification label is <code>NOT_A_DECISION_SAMPLE</code>.</p>
+
+<h2>What is being estimated</h2>
+<p>For each locked cell and seed, Δ is the paired difference of mean out-of-sample Frobenius error: sample covariance minus Ledoit–Wolf. The cell summary is the median across seeds. The primary estimand is the N/T-weighted mean of those medians on the stratum N/T ≥ 0.40:</p>
+<pre>Θ_H1 = Σ_{c in stratum} (N/T)_c · median_s(Δ_{c,s}) / Σ_{c in stratum} (N/T)_c</pre>
+<p>The stratum is fixed: N=20, T=36, low, N=20, T=36, moderate, N=20, T=36, block, N=20, T=36, high, N=50, T=36, low, N=50, T=36, moderate, N=50, T=36, block, N=50, T=36, high, N=50, T=60, low, N=50, T=60, moderate, N=50, T=60, block, N=50, T=60, high, N=50, T=120, low, N=50, T=120, moderate, N=50, T=120, block, N=50, T=120, high. Sixteen cells. Seeds 0–29 are the decision sample. Seeds 9000–9004 are the pilot and are not reused.</p>
+<p>Uncertainty for Θ is a seed bootstrap: resample seeds inside each cell, recompute medians, recompute Θ. A block bootstrap of a single path is not the test. Block length 6 is used only for within-path Sharpe intervals.</p>
+<p>The minimum practical effect is a 15% reduction in sample-covariance Frobenius. <code>HOLDS</code> requires the 5th percentile of Θ to be positive and the point estimate to clear that 15% bar. Power of this compound rule is computed at 2× the minimum effect, under a Gaussian homoskedastic model fit to the pilot. The target is 80%. Power exactly at the 15% boundary is reported and is not the gate: at the boundary the point-estimate rule rejects about half the time even when the interval excludes zero. If pilot variance understates the N=50 cells, reported power is an upper bound. If design power is below 80%, a complete sample is still <code>INCONCLUSIVE_UNDERPOWERED</code>.</p>
+<p>A 70% cell-count vote is not used. It had no power calculation and it can be passed by many tiny effects.</p>
+
+<h2>Hyperparameters that are not free</h2>
+<p>Linkage candidates are exactly ('single', 'average'). The inner window is the last 12 months of the training sample. The fit window must be at least 24 months, otherwise linkage is <code>single</code> and the skip is recorded. The inner metric is realized_variance. Ties go to <code>single</code>. Ledoit–Wolf has no shrinkage grid; the intensity is the analytic estimate and is stored, not chosen. The factor estimator keeps 1 principal component. Lookbacks (36, 60, 120) are experimental factors, not tuned parameters.</p>
+
+<h2>Constraints</h2>
+<p>Every method, including HRP, is projected onto the same set: weights sum to 1, weights are non-negative, and no weight exceeds max(0.25, 1/N). The quadratic programs use SLSQP, ftol 1e-12, maxiter 500, with those bounds. If the solver fails or the projection is non-finite, the weight is equal-weight and <code>optimizer_failed</code> is true. The cap rule is feasible for every N in the grid because N·cap ≥ 1.</p>
+
+<h2>Regime detector</h2>
+<p>This is not a hidden state model. On the training sample only, 12-month mean volatility and mean absolute correlation are computed. Quantiles at 0.80 are taken from windows that end before the decision window. Stress is declared if either current feature exceeds its quantile. Otherwise the state is calm. If fewer than 12 calibration points exist, the state is calm. Stress shortens the covariance window to the last 24 months. Calm uses the full lookback. Full-sample smoothed probabilities are not computed.</p>
+<p>H5 is a comparison of Ledoit–Wolf minimum variance with that switch against the same estimator with the switch off. It is supported only if shocked cells show a variance reduction of at least 10% and unshocked cells do not show a variance increase above 5%. H5 is not folded into Θ_H1.</p>
+
+<h2>Other hypotheses</h2>
+<p>H2 is the unweighted mean, across stratum cells, of the seed-median gap in effective number of bets (HRP minus sample minimum variance) at zero cost. The practical bar is +1 bet. H3 is not a performance claim. A reversal is a sign change in the seed-median net-Sharpe gap between HRP and sample minimum variance at 0 bps and at 20 bps, and both gaps must clear 0.05 in absolute value.</p>
+
+<h2>What the claims are conditional on</h2>
+<p>Θ_H1 uses Gaussian draws and only the four named correlation structures (equicorrelation 0.10, 0.30, 0.60, and a two-block matrix). It does not include the random full-rank correlation, the t distribution with 4 degrees of freedom, or the scale mixture (probability 0.05 of multiplying the draw by 3; unconditional variance factor 1.40). Those are stresses. A result that changes sign there limits the claim to the primary design. It is not averaged back into Θ after being seen.</p>
+
+<h2>Verification record</h2>
+<p>Decision seeds required: 30. This run has 3 and 4 of 16 stratum cells. The status function is required to return <code>NOT_A_DECISION_SAMPLE</code>. On the cells that were run, the partial Θ is 6.4% of sample Frobenius, against a 15% bar, and the seed-bootstrap 5th percentile is -0.000134. That interval includes non-positive values. Power at the minimum effect is 0.507. Power at twice the minimum effect is 1.000 under the pilot variance; that second number is not evidence about N=50.</p>
+<table><thead><tr><th>item</th><th>value</th></tr></thead><tbody><tr><td>h1_status</td><td>NOT_A_DECISION_SAMPLE</td></tr><tr><td>theta_h1</td><td>0.0005619398608186241</td></tr><tr><td>theta_h1_p05</td><td>-0.00013426978703103972</td></tr><tr><td>theta_h1_p95</td><td>0.0015752981034246993</td></tr><tr><td>mean_sample_frobenius</td><td>0.008713628681810793</td></tr><tr><td>relative_h1</td><td>0.06448976440683567</td></tr><tr><td>pilot_sigma</td><td>0.0009347739463745635</td></tr><tr><td>pilot_mean_sample_frobenius</td><td>0.008399413825489676</td></tr><tr><td>mde_abs</td><td>0.0012599120738234514</td></tr><tr><td>power_at_design_alternative</td><td>1.0</td></tr><tr><td>power_at_mde</td><td>0.507</td></tr><tr><td>h2_status</td><td>NOT_A_DECISION_SAMPLE</td></tr><tr><td>theta_h2</td><td>8.633103647934892</td></tr><tr><td>theta_h2_p05</td><td>8.127348654300615</td></tr><tr><td>theta_h2_p95</td><td>9.308677401685376</td></tr><tr><td>h3_reversal_cells</td><td>0</td></tr><tr><td>stratum_cells_present</td><td>4</td></tr><tr><td>stratum_cells_required</td><td>16</td></tr><tr><td>seeds_present</td><td>3</td></tr><tr><td>seeds_required</td><td>30</td></tr></tbody></table>
+<h3>Mean errors on the Gaussian, unshocked verification paths</h3>
+<table><thead><tr><th>method</th><th>frobenius</th><th>eig_l1</th><th>risk_abs</th><th>eff_bets</th><th>turnover</th><th>failed_frac</th></tr></thead><tbody><tr><td>const_corr_mv</td><td>0.0060</td><td>0.0090</td><td>0.0001</td><td>6.4385</td><td>0.0289</td><td>0.0000</td></tr><tr><td>equal_weight</td><td></td><td></td><td></td><td>14.0000</td><td>0.0111</td><td>0.0000</td></tr><tr><td>factor_mv</td><td>0.0072</td><td>0.0102</td><td>0.0001</td><td>6.6573</td><td>0.0386</td><td>0.0000</td></tr><tr><td>hrp</td><td>0.0052</td><td>0.0068</td><td>0.0001</td><td>10.4625</td><td>0.0631</td><td>0.0000</td></tr><tr><td>inverse_vol</td><td></td><td></td><td></td><td>12.5017</td><td>0.0181</td><td>0.0000</td></tr><tr><td>lw_mv</td><td>0.0052</td><td>0.0068</td><td>0.0001</td><td>7.5708</td><td>0.0364</td><td>0.0000</td></tr><tr><td>sample_mv</td><td>0.0057</td><td>0.0072</td><td>0.0001</td><td>5.7310</td><td>0.0433</td><td>0.0000</td></tr></tbody></table>
+<img src="frobenius.png" alt="Frobenius error against N/T">
+<img src="bets.png" alt="Effective number of bets">
+<h3>Tail stress, N=20, T=36, moderate correlation</h3>
+<table><thead><tr><th>innovation</th><th>const_corr_mv</th><th>equal_weight</th><th>factor_mv</th><th>hrp</th><th>inverse_vol</th><th>lw_mv</th><th>sample_mv</th></tr></thead><tbody><tr><td>gaussian</td><td>0.0054</td><td></td><td>0.0079</td><td>0.0085</td><td></td><td>0.0085</td><td>0.0089</td></tr><tr><td>mix</td><td>0.0149</td><td></td><td>0.0238</td><td>0.0153</td><td></td><td>0.0153</td><td>0.0249</td></tr><tr><td>t4</td><td>0.0067</td><td></td><td>0.0085</td><td>0.0079</td><td></td><td>0.0079</td><td>0.0091</td></tr></tbody></table>
+<h3>Ledoit–Wolf minimum variance under an injected shock</h3>
+<table><thead><tr><th>shock</th><th>detector</th><th>variance</th><th>frobenius</th></tr></thead><tbody><tr><td></td><td>False</td><td>0.0004</td><td>0.0085</td></tr><tr><td></td><td>True</td><td>0.0004</td><td>0.0089</td></tr><tr><td>corr</td><td>False</td><td>0.0005</td><td>0.0128</td></tr><tr><td>corr</td><td>True</td><td>0.0005</td><td>0.0125</td></tr><tr><td>vol</td><td>False</td><td>0.0009</td><td>0.0315</td></tr><tr><td>vol</td><td>True</td><td>0.0009</td><td>0.0303</td></tr></tbody></table>
+<p>Source: <a href="https://github.com/chrislernunes/atlas">github.com/chrislernunes/atlas</a>. Constants: <code>src/study/protocol.py</code>.</p>
+</body>
+</html>
