@@ -38,13 +38,15 @@ img { width: 100%; height: auto; }
 .caption { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; color: #444; margin: -0.6rem 0 1.2rem; }
 .formula {
   margin: 1.4rem 0;
-  padding: 0.9rem 1.1rem;
+  padding: 1.2rem 1.4rem;
   background: #fafafa;
-  border-left: 3px solid #111;
+  border-left: 4px solid #111;
   overflow-x: auto;
   text-align: center;
+  font-size: 1.15em;
 }
 .formula .katex-display { margin: 0; }
+.katex { font-size: 1.1em; }
 </style>
 </head>
 <body>
@@ -65,13 +67,13 @@ img { width: 100%; height: auto; }
 <p class="note">The numbers below are the verification samples in this repository. They are not a hypothesis decision. The verification label is <code>NOT_A_DECISION_SAMPLE</code>.</p>
 
 <h2>What is being estimated</h2>
-<p>For each locked cell and seed, Δ is the paired difference of mean out-of-sample Frobenius error: sample covariance minus Ledoit–Wolf. The cell summary is the median across seeds. The primary estimand is the N/T-weighted mean of those medians on the stratum N/T ≥ 0.40:</p>
+<p>For each locked cell and seed, $\Delta$ is the paired difference of mean out-of-sample Frobenius error: sample covariance minus Ledoit–Wolf. The cell summary is the median across seeds. The primary estimand is the $N/T$-weighted mean of those medians on the stratum $N/T \geq 0.40$:</p>
 <div class="formula">
 $$\Theta_{H1} = \frac{\sum_{c \in \text{stratum}} (N/T)_c \cdot \operatorname{median}_s(\Delta_{c,s})}{\sum_{c \in \text{stratum}} (N/T)_c}$$
 </div>
 <p>The stratum is fixed: N=20, T=36, low, N=20, T=36, moderate, N=20, T=36, block, N=20, T=36, high, N=50, T=36, low, N=50, T=36, moderate, N=50, T=36, block, N=50, T=36, high, N=50, T=60, low, N=50, T=60, moderate, N=50, T=60, block, N=50, T=60, high, N=50, T=120, low, N=50, T=120, moderate, N=50, T=120, block, N=50, T=120, high. Sixteen cells. Seeds 0–29 are the decision sample. Seeds 9000–9004 are the pilot and are not reused.</p>
-<p>Uncertainty for Θ is a seed bootstrap: resample seeds inside each cell, recompute medians, recompute Θ. A block bootstrap of a single path is not the test. Block length 6 is used only for within-path Sharpe intervals.</p>
-<p>The minimum practical effect is a 15% reduction in sample-covariance Frobenius. <code>HOLDS</code> requires the 5th percentile of Θ to be positive and the point estimate to clear that 15% bar. Power of this compound rule is computed at 2× the minimum effect, under a Gaussian homoskedastic model fit to the pilot. The target is 80%. Power exactly at the 15% boundary is reported and is not the gate: at the boundary the point-estimate rule rejects about half the time even when the interval excludes zero. If pilot variance understates the N=50 cells, reported power is an upper bound. If design power is below 80%, a complete sample is still <code>INCONCLUSIVE_UNDERPOWERED</code>.</p>
+<p>Uncertainty for $\Theta$ is a seed bootstrap: resample seeds inside each cell, recompute medians, recompute $\Theta$. A block bootstrap of a single path is not the test. Block length 6 is used only for within-path Sharpe intervals.</p>
+<p>The minimum practical effect is a 15% reduction in sample-covariance Frobenius. <code>HOLDS</code> requires the 5th percentile of $\Theta$ to be positive and the point estimate to clear that 15% bar. Power of this compound rule is computed at 2× the minimum effect, under a Gaussian homoskedastic model fit to the pilot. The target is 80%. Power exactly at the 15% boundary is reported and is not the gate: at the boundary the point-estimate rule rejects about half the time even when the interval excludes zero. If pilot variance understates the N=50 cells, reported power is an upper bound. If design power is below 80%, a complete sample is still <code>INCONCLUSIVE_UNDERPOWERED</code>.</p>
 <p>A 70% cell-count vote is not used. It had no power calculation and it can be passed by many tiny effects.</p>
 
 <h2>Hyperparameters that are not free</h2>
@@ -82,16 +84,16 @@ $$\Theta_{H1} = \frac{\sum_{c \in \text{stratum}} (N/T)_c \cdot \operatorname{me
 
 <h2>Regime detector</h2>
 <p>This is not a hidden state model. On the training sample only, 12-month mean volatility and mean absolute correlation are computed. Quantiles at 0.80 are taken from windows that end before the decision window. Stress is declared if either current feature exceeds its quantile. Otherwise the state is calm. If fewer than 12 calibration points exist, the state is calm. Stress shortens the covariance window to the last 24 months. Calm uses the full lookback. Full-sample smoothed probabilities are not computed.</p>
-<p>H5 is a comparison of Ledoit–Wolf minimum variance with that switch against the same estimator with the switch off. It is supported only if shocked cells show a variance reduction of at least 10% and unshocked cells do not show a variance increase above 5%. H5 is not folded into Θ_H1.</p>
+<p>H5 is a comparison of Ledoit–Wolf minimum variance with that switch against the same estimator with the switch off. It is supported only if shocked cells show a variance reduction of at least 10% and unshocked cells do not show a variance increase above 5%. H5 is not folded into $\Theta_{H1}$.</p>
 
 <h2>Other hypotheses</h2>
 <p>H2 is the unweighted mean, across stratum cells, of the seed-median gap in effective number of bets (HRP minus sample minimum variance) at zero cost. The practical bar is +1 bet. H3 is not a performance claim. A reversal is a sign change in the seed-median net-Sharpe gap between HRP and sample minimum variance at 0 bps and at 20 bps, and both gaps must clear 0.05 in absolute value.</p>
 
 <h2>What the claims are conditional on</h2>
-<p>Θ_H1 uses Gaussian draws and only the four named correlation structures (equicorrelation 0.10, 0.30, 0.60, and a two-block matrix). It does not include the random full-rank correlation, the t distribution with 4 degrees of freedom, or the scale mixture (probability 0.05 of multiplying the draw by 3; unconditional variance factor 1.40). Those are stresses. A result that changes sign there limits the claim to the primary design. It is not averaged back into Θ after being seen.</p>
+<p>$\Theta_{H1}$ uses Gaussian draws and only the four named correlation structures (equicorrelation 0.10, 0.30, 0.60, and a two-block matrix). It does not include the random full-rank correlation, the t distribution with 4 degrees of freedom, or the scale mixture (probability 0.05 of multiplying the draw by 3; unconditional variance factor 1.40). Those are stresses. A result that changes sign there limits the claim to the primary design. It is not averaged back into $\Theta$ after being seen.</p>
 
 <h2>Verification record</h2>
-<p>Decision seeds required: 30. This run has 3 and 4 of 16 stratum cells. The status function is required to return <code>NOT_A_DECISION_SAMPLE</code>. On the cells that were run, the partial Θ is 6.4% of sample Frobenius, against a 15% bar, and the seed-bootstrap 5th percentile is -0.000134. That interval includes non-positive values. Power at the minimum effect is 0.507. Power at twice the minimum effect is 1.000 under the pilot variance; that second number is not evidence about N=50.</p>
+<p>Decision seeds required: 30. This run has 3 and 4 of 16 stratum cells. The status function is required to return <code>NOT_A_DECISION_SAMPLE</code>. On the cells that were run, the partial $\Theta$ is 6.4% of sample Frobenius, against a 15% bar, and the seed-bootstrap 5th percentile is -0.000134. That interval includes non-positive values. Power at the minimum effect is 0.507. Power at twice the minimum effect is 1.000 under the pilot variance; that second number is not evidence about N=50.</p>
 <table><thead><tr><th>quantity</th><th>value</th></tr></thead><tbody><tr><td>H1</td><td>NOT_A_DECISION_SAMPLE</td></tr><tr><td>Theta, Frobenius</td><td>0.000562</td></tr><tr><td>5th percentile</td><td>-0.000134</td></tr><tr><td>95th percentile</td><td>0.001575</td></tr><tr><td>Relative to sample</td><td>6.4%</td></tr><tr><td>Sample Frobenius</td><td>0.00871</td></tr><tr><td>Pilot sigma</td><td>0.000935</td></tr><tr><td>Absolute minimum effect</td><td>0.00126</td></tr><tr><td>Power at minimum effect</td><td>0.51</td></tr><tr><td>Power at twice the minimum effect</td><td>1.00</td></tr><tr><td>H2</td><td>NOT_A_DECISION_SAMPLE</td></tr><tr><td>Theta, effective bets</td><td>8.63</td></tr><tr><td>H2 5th percentile</td><td>8.13</td></tr><tr><td>H2 95th percentile</td><td>9.31</td></tr><tr><td>H3 reversals</td><td>0</td></tr><tr><td>Stratum cells</td><td>4 / 16</td></tr><tr><td>Seeds</td><td>3 / 30</td></tr></tbody></table>
 <h3>Covariance error, Gaussian paths, no injected shock</h3>
 <p class="caption">Equal weight and inverse volatility do not form a covariance, so they are not in this table.</p>
